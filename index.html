@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>هوای ساعتی</title>
+<meta name="theme-color" content="#3b82f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="هوای ساعتی">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" id="touchIcon">
+<link rel="manifest" id="manifest">
+<style>
+  :root{
+    --bg:#eaf1fb; --card:rgba(255,255,255,.72); --text:#0f1b2d; --muted:#5d6d86;
+    --accent:#3b82f6; --rain:#2f7cf6; --border:rgba(15,27,45,.08); --track:rgba(15,27,45,.08);
+    --shadow:0 10px 30px rgba(30,60,120,.10);
+    --blob1:rgba(59,130,246,.25); --blob2:rgba(168,85,247,.18);
+  }
+  html[data-scheme="dark"]{
+    --bg:#0a1020; --card:rgba(26,36,60,.66); --text:#e9eefc; --muted:#8fa1c4;
+    --accent:#60a5fa; --rain:#5aa2ff; --border:rgba(255,255,255,.08); --track:rgba(255,255,255,.10);
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+    --blob1:rgba(59,130,246,.22); --blob2:rgba(139,92,246,.20);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{color-scheme:light dark}
+  body{
+    margin:0;min-height:100vh;color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Vazirmatn,sans-serif;
+    background:
+      radial-gradient(600px 400px at 90% -5%,var(--blob1),transparent 70%),
+      radial-gradient(500px 400px at -10% 30%,var(--blob2),transparent 70%),
+      var(--bg);
+    background-attachment:fixed;
+    transition:background-color .3s,color .3s;
+  }
+  .app{max-width:640px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom))}
+  button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+  .t{unicode-bidi:isolate;direction:ltr;display:inline-block}
+
+  /* header */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .place{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:var(--card);
+    border:1px solid var(--border);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-weight:700;max-width:62%}
+  .place span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .actions{display:flex;gap:8px}
+  .icon-btn{height:42px;min-width:42px;padding:0 12px;border-radius:999px;background:var(--card);border:1px solid var(--border);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px}
+  .icon-btn .ic{font-size:17px;line-height:1}
+  .spin .ic{animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(-360deg)}}
+
+  /* hero */
+  .hero{position:relative;overflow:hidden;border-radius:28px;padding:22px 22px 18px;color:#fff;box-shadow:var(--shadow);
+    background:linear-gradient(135deg,#3b82f6,#38bdf8 65%,#fbbf24 140%);transition:background .4s}
+  .hero[data-sky="clear-night"]{background:linear-gradient(135deg,#1e1b4b,#312e81 60%,#0ea5e9 150%)}
+  .hero[data-sky="cloudy"]{background:linear-gradient(135deg,#64748b,#94a3b8)}
+  .hero[data-sky="rain"]{background:linear-gradient(135deg,#1e3a8a,#2563eb 60%,#64748b 150%)}
+  .hero[data-sky="snow"]{background:linear-gradient(135deg,#5b8def,#9db4d3 70%,#cbd5e1 150%)}
+  .hero[data-sky="storm"]{background:linear-gradient(135deg,#111827,#4c1d95 70%,#6d28d9 150%)}
+  .hero::after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;left:-70px;top:-90px;
+    background:radial-gradient(circle,rgba(255,255,255,.28),transparent 70%);pointer-events:none}
+  .hero-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative}
+  .date{opacity:.85;font-size:13px}
+  .cond{font-size:20px;font-weight:700;margin-top:4px}
+  .big-icon{font-size:64px;line-height:1;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))}
+  .temp{font-size:84px;font-weight:300;line-height:1;margin:6px 0 4px;letter-spacing:-2px}
+  .sub{font-size:14px;opacity:.95;margin-bottom:16px;min-height:20px}
+  .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .chip{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:10px 8px;text-align:center;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .chip small{display:block;opacity:.85;font-size:11.5px;margin-bottom:3px}
+  .chip b{font-size:16px}
+
+  /* cards */
+  .card{margin-top:14px;background:var(--card);border:1px solid var(--border);border-radius:24px;padding:16px 14px;
+    box-shadow:var(--shadow);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+  .card h2{margin:0 4px 10px;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+  .legend{font-size:11.5px;color:var(--muted);font-weight:400;display:flex;gap:12px}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:5px;vertical-align:middle}
+  .chart{overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin}
+  .chart svg{display:block}
+  .c-lbl{fill:var(--muted);font-size:12px}
+  .c-tmp{fill:var(--text);font-size:13px;font-weight:700}
+  .c-line{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round}
+  .c-dot{fill:var(--accent);stroke:var(--bg);stroke-width:2.5}
+  .c-bar{fill:var(--rain);opacity:.75}
+  .c-grid{stroke:var(--border);stroke-dasharray:3 5}
+
+  /* list */
+  .day-sep{margin:12px 6px 4px;font-size:12px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:8px}
+  .day-sep::after{content:"";flex:1;height:1px;background:var(--border)}
+  .row{display:grid;grid-template-columns:54px 40px 1fr 56px;align-items:center;gap:6px;padding:10px 6px;border-radius:16px}
+  .row + .row{border-top:1px solid var(--border)}
+  .row.now{background:color-mix(in srgb,var(--accent) 12%,transparent);border-top-color:transparent}
+  .row.now + .row{border-top-color:transparent}
+  .r-time{font-weight:700;font-size:14px}
+  .r-ico{font-size:26px;text-align:center}
+  .r-lbl{font-size:13.5px}
+  .r-pr{display:flex;align-items:center;gap:8px;margin-top:5px;font-size:11.5px;color:var(--muted)}
+  .bar{flex:0 0 70px;height:6px;border-radius:6px;background:var(--track);overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#60a5fa,var(--rain))}
+  .r-temp{font-size:20px;font-weight:600;text-align:left}
+
+  .status{margin:16px 6px 0;text-align:center;font-size:12px;color:var(--muted);line-height:1.9}
+  .error{margin:14px 0;padding:14px;border-radius:16px;background:rgba(239,68,68,.12);color:#ef4444;font-size:14px;text-align:center}
+  .loading{padding:40px 0;text-align:center;color:var(--muted)}
+
+  /* dialog */
+  dialog{width:min(92vw,440px);border:1px solid var(--border);border-radius:24px;padding:16px;background:var(--bg);color:var(--text);
+    margin:10vh auto auto;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+  dialog::backdrop{background:rgba(5,10,25,.55);backdrop-filter:blur(4px)}
+  .dlg-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .dlg-h b{font-size:16px}
+  .x{width:34px;height:34px;border-radius:50%;background:var(--track);font-size:18px}
+  #q{width:100%;padding:13px 16px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font:inherit;font-size:16px;outline:none}
+  #q:focus{border-color:var(--accent)}
+  .geo{width:100%;margin-top:10px;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-weight:700}
+  #results{list-style:none;margin:10px 0 0;padding:0;max-height:40vh;overflow:auto}
+  #results li button{width:100%;text-align:right;padding:12px 8px;border-radius:12px;display:block}
+  #results li button:hover,#results li button:active{background:var(--track)}
+  #results small{color:var(--muted);display:block;margin-top:2px}
+  .hint{color:var(--muted);text-align:center;padding:14px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <button class="place" id="placeBtn" aria-label="تغییر شهر"><b>📍</b><span id="placeName">…</span></button>
+    <div class="actions">
+      <button class="icon-btn" id="refreshBtn" aria-label="به‌روزرسانی"><span class="ic">↻</span></button>
+      <button class="icon-btn" id="themeBtn" aria-label="تغییر تم"><span class="ic" id="themeIc"></span><span id="themeTx"></span></button>
+    </div>
+  </header>
+
+  <main id="main"><div class="loading">در حال دریافت اطلاعات…</div></main>
+  <p class="status" id="status"></p>
+</div>
+
+<dialog id="dlg">
+  <div class="dlg-h"><b>انتخاب شهر</b><button class="x" id="closeDlg" aria-label="بستن">✕</button></div>
+  <input id="q" type="search" placeholder="نام شهر… (مثلاً شیراز)" autocomplete="off">
+  <button class="geo" id="geoBtn">🎯 استفاده از موقعیت فعلی من</button>
+  <ul id="results"></ul>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const FA = '۰۱۲۳۴۵۶۷۸۹';
+const fa = x => String(x).replace(/\d/g, d => FA[d]);
+const deg = t => { const r = Math.round(t); return `<span class="t">${r < 0 ? '−' : ''}${fa(Math.abs(r))}°</span>`; };
+const mmf = v => v.toLocaleString('fa-IR', { maximumFractionDigits: 1 });
+const dateFmt = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+const fmtDate = ymd => dateFmt.format(new Date(ymd + 'T12:00:00Z'));
+
+/* ---------- کد وضعیت هوا ---------- */
+function wx(code, day) {
+  const d = day !== 0;
+  if (code === 0)  return { l: 'آسمان صاف',        i: d ? '☀️' : '🌙', k: 'clear' };
+  if (code === 1)  return { l: 'عمدتاً صاف',       i: d ? '🌤️' : '🌙', k: 'clear' };
+  if (code === 2)  return { l: 'نیمه‌ابری',         i: d ? '⛅' : '☁️', k: 'partly' };
+  if (code === 3)  return { l: 'ابری',              i: '☁️', k: 'cloudy' };
+  if (code === 45 || code === 48) return { l: 'مه‌آلود', i: '🌫️', k: 'cloudy' };
+  if (code >= 51 && code <= 55) return { l: 'نم‌نم باران', i: '🌦️', k: 'rain' };
+  if (code === 56 || code === 57) return { l: 'نم‌نم یخ‌زده', i: '🌧️', k: 'rain' };
+  if (code === 61) return { l: 'باران ضعیف',  i: '🌦️', k: 'rain' };
+  if (code === 63) return { l: 'باران',        i: '🌧️', k: 'rain' };
+  if (code === 65) return { l: 'باران شدید',  i: '🌧️', k: 'rain' };
+  if (code === 66 || code === 67) return { l: 'باران یخ‌زده', i: '🌧️', k: 'rain' };
+  if (code === 71) return { l: 'برف ضعیف',    i: '🌨️', k: 'snow' };
+  if (code === 73) return { l: 'برف',          i: '❄️', k: 'snow' };
+  if (code === 75) return { l: 'برف سنگین',   i: '❄️', k: 'snow' };
+  if (code === 77) return { l: 'دانه‌های برف', i: '🌨️', k: 'snow' };
+  if (code >= 80 && code <= 82) return { l: 'رگبار', i: '🌧️', k: 'rain' };
+  if (code === 85 || code === 86) return { l: 'رگبار برف', i: '🌨️', k: 'snow' };
+  if (code === 95) return { l: 'رعد و برق', i: '⛈️', k: 'storm' };
+  if (code === 96 || code === 99) return { l: 'رعد و برق و تگرگ', i: '⛈️', k: 'storm' };
+  return { l: 'نامشخص', i: '🌡️', k: 'cloudy' };
+}
+
+/* ---------- تم ---------- */
+const THEMES = { auto: ['🌓', 'خودکار'], light: ['☀️', 'روشن'], dark: ['🌙', 'تیره'] };
+let themeMode = localStorage.theme || 'auto';
+const mq = matchMedia('(prefers-color-scheme: dark)');
+function applyTheme() {
+  const dark = themeMode === 'dark' || (themeMode === 'auto' && mq.matches);
+  document.documentElement.dataset.scheme = dark ? 'dark' : 'light';
+  document.querySelector('meta[name=theme-color]').content = dark ? '#0a1020' : '#eaf1fb';
+  $('#themeIc').textContent = THEMES[themeMode][0];
+  $('#themeTx').textContent = THEMES[themeMode][1];
+}
+$('#themeBtn').onclick = () => {
+  themeMode = { auto: 'light', light: 'dark', dark: 'auto' }[themeMode];
+  localStorage.theme = themeMode; applyTheme();
+};
+mq.addEventListener('change', applyTheme);
+applyTheme();
+
+/* ---------- مکان ---------- */
+function getPlace() {
+  const p = new URLSearchParams(location.search);
+  if (p.has('lat') && p.has('lon')) return { lat: +p.get('lat'), lon: +p.get('lon'), name: p.get('name') || 'مکان من' };
+  try { const s = JSON.parse(localStorage.place); if (s && s.lat) return s; } catch {}
+  return { lat: 35.6892, lon: 51.389, name: 'تهران' };
+}
+let place = getPlace();
+function setPlace(pl) {
+  place = pl;
+  localStorage.place = JSON.stringify(pl);
+  const u = new URL(location.href);
+  u.search = '';
+  u.searchParams.set('lat', pl.lat.toFixed(3));
+  u.searchParams.set('lon', pl.lon.toFixed(3));
+  u.searchParams.set('name', pl.name);
+  history.replaceState(null, '', u);
+  buildManifest();
+  load();
+}
+
+/* ---------- دریافت داده ---------- */
+let lastFetch = 0;
+async function load() {
+  $('#placeName').textContent = place.name;
+  const key = `wx:${place.lat.toFixed(2)},${place.lon.toFixed(2)}`;
+  $('#refreshBtn').classList.add('spin');
+  const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + place.lat + '&longitude=' + place.lon +
+    '&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,is_day&timezone=auto&forecast_days=2';
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 12000);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    localStorage[key] = JSON.stringify({ t: Date.now(), data });
+    lastFetch = Date.now();
+    render(data);
+    $('#status').innerHTML = 'منبع داده: Open-Meteo<br>آخرین به‌روزرسانی: ' + fa(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
+  } catch (e) {
+    let shown = false;
+    try {
+      const c = JSON.parse(localStorage[key]);
+      render(c.data); shown = true;
+      $('#status').innerHTML = '⚠️ اتصال برقرار نشد؛ داده ذخیره‌شده نمایش داده می‌شود<br>(دریافت‌شده در ' +
+        fa(new Date(c.t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })) + ')';
+    } catch {}
+    if (!shown) {
+      $('#main').innerHTML = '<div class="error">دریافت اطلاعات ناموفق بود. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.</div>';
+      $('#status').textContent = '';
+    }
+  } finally {
+    clearTimeout(to);
+    $('#refreshBtn').classList.remove('spin');
+  }
+}
+
+/* ---------- نمایش ---------- */
+function render(d) {
+  const h = d.hourly;
+  const nowKey = new Date(Date.now() + (d.utc_offset_seconds || 0) * 1000).toISOString().slice(0, 13);
+  const i0 = h.time.findIndex(t => t.slice(0, 13) >= nowKey);
+  if (i0 < 0) throw new Error('stale');
+  const rows = [];
+  for (let i = i0; i < Math.min(i0 + 24, h.time.length); i++) {
+    rows.push({
+      time: h.time[i], temp: h.temperature_2m[i], prob: h.precipitation_probability[i] ?? 0,
+      mm: h.precipitation[i] ?? 0, w: wx(h.weather_code[i], h.is_day[i])
+    });
+  }
+  const first = rows[0];
+  const temps = rows.map(r => r.temp);
+  const hi = Math.max(...temps), lo = Math.min(...temps);
+  const total = rows.reduce((s, r) => s + r.mm, 0);
+  const wet = r => r.mm >= 0.1 || r.prob >= 50;
+  const wi = rows.findIndex(wet);
+  const hh = r => fa(r.time.slice(11, 13) + ':00');
+  let summary;
+  if (wi === -1) summary = '☂️ در ۲۴ ساعت آینده بارش مهمی پیش‌بینی نمی‌شود';
+  else if (wi === 0) summary = '☔ هم‌اکنون احتمال بارش وجود دارد';
+  else summary = `☔ نخستین احتمال بارش: ساعت ${hh(rows[wi])}`;
+
+  let sky = first.w.k;
+  if (sky === 'clear' || sky === 'partly') sky = (h.is_day[i0] === 0) ? 'clear-night' : 'clear-day';
+
+  let html = `
+  <section class="hero" data-sky="${sky}">
+    <div class="hero-top">
+      <div><div class="date">${fmtDate(first.time.slice(0, 10))} · ساعت ${hh(first)}</div><div class="cond">${first.w.l}</div></div>
+      <div class="big-icon">${first.w.i}</div>
+    </div>
+    <div class="temp">${deg(first.temp)}</div>
+    <div class="sub">${summary}</div>
+    <div class="chips">
+      <div class="chip"><small>بیشینه</small><b>${deg(hi)}</b></div>
+      <div class="chip"><small>کمینه</small><b>${deg(lo)}</b></div>
+      <div class="chip"><small>مجموع بارش</small><b>${total < 0.1 ? '۰' : mmf(total)} <small style="display:inline">mm</small></b></div>
+    </div>
+  </section>
+  <section class="card">
+    <h2>نمودار دما و بارش <span class="legend"><span><i style="background:var(--accent)"></i>دما</span><span><i style="background:var(--rain)"></i>احتمال بارش</span></span></h2>
+    <div class="chart" id="chart">${chartSVG(rows)}</div>
+  </section>
+  <section class="card"><h2>ساعت به ساعت</h2><div id="list">`;
+
+  const day0 = first.time.slice(0, 10);
+  let lastDay = day0;
+  rows.forEach((r, i) => {
+    const day = r.time.slice(0, 10);
+    if (day !== lastDay) { html += `<div class="day-sep">${day > day0 ? 'فردا' : ''} ${fmtDate(day)}</div>`; lastDay = day; }
+    html += `
+    <div class="row${i === 0 ? ' now' : ''}">
+      <div class="r-time">${i === 0 ? 'اکنون' : hh(r)}</div>
+      <div class="r-ico">${r.w.i}</div>
+      <div>
+        <div class="r-lbl">${r.w.l}</div>
+        <div class="r-pr"><span class="bar"><i style="width:${r.prob}%"></i></span><span>٪${fa(r.prob)}${r.mm >= 0.1 ? ' · ' + mmf(r.mm) + ' mm' : ''}</span></div>
+      </div>
+      <div class="r-temp">${deg(r.temp)}</div>
+    </div>`;
+  });
+  html += '</div></section>';
+  $('#main').innerHTML = html;
+}
+
+function chartSVG(rows) {
+  const step = 58, W = rows.length * step, H = 190;
+  const top = 34, bot = 108;               // محدوده منحنی دما
+  const barBase = 150, barMax = 30;        // محدوده ستون‌های بارش
+  const temps = rows.map(r => r.temp);
+  const mn = Math.min(...temps), mx = Math.max(...temps), span = (mx - mn) || 1;
+  const X = i => W - (i + 0.5) * step;     // راست به چپ
+  const Y = t => bot - ((t - mn) / span) * (bot - top);
+
+  let line = `M${X(0)} ${Y(rows[0].temp)}`;
+  for (let i = 1; i < rows.length; i++) {
+    const x0 = X(i - 1), x1 = X(i), cx = (x0 + x1) / 2;
+    line += ` C${cx} ${Y(rows[i - 1].temp)} ${cx} ${Y(rows[i].temp)} ${x1} ${Y(rows[i].temp)}`;
+  }
+  const area = `${line} L${X(rows.length - 1)} ${bot + 6} L${X(0)} ${bot + 6} Z`;
+
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="نمودار دما">
+    <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color:var(--accent);stop-opacity:.35"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/>
+    </linearGradient></defs>
+    <line class="c-grid" x1="0" x2="${W}" y1="${barBase}" y2="${barBase}"/>
+    <path d="${area}" fill="url(#ag)"/>
+    <path class="c-line" d="${line}"/>`;
+
+  rows.forEach((r, i) => {
+    const x = X(i), y = Y(r.temp);
+    const bh = Math.max(r.prob > 0 ? 3 : 0, r.prob / 100 * barMax);
+    const t = Math.round(r.temp);
+    s += `<circle class="c-dot" cx="${x}" cy="${y}" r="4.5"/>
+      <text class="c-tmp" x="${x}" y="${y - 12}" text-anchor="middle" direction="ltr">${t < 0 ? '−' : ''}${fa(Math.abs(t))}°</text>
+      <rect class="c-bar" x="${x - 9}" y="${barBase - bh}" width="18" height="${bh}" rx="5"/>
+      ${r.prob >= 20 ? `<text class="c-lbl" x="${x}" y="${barBase - bh - 4}" text-anchor="middle" style="font-size:10px">${fa(r.prob)}٪</text>` : ''}
+      <text class="c-lbl" x="${x}" y="${H - 10}" text-anchor="middle">${i === 0 ? 'اکنون' : fa(r.time.slice(11, 13))}</text>`;
+  });
+  return s + '</svg>';
+}
+
+/* ---------- جستجوی شهر ---------- */
+const dlg = $('#dlg'), q = $('#q'), res = $('#results');
+$('#placeBtn').onclick = () => { dlg.showModal(); q.value = ''; res.innerHTML = '<li class="hint">نام شهر را تایپ کنید</li>'; setTimeout(() => q.focus(), 50); };
+$('#closeDlg').onclick = () => dlg.close();
+dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+
+let timer;
+q.addEventListener('input', () => {
+  clearTimeout(timer);
+  const v = q.value.trim();
+  if (v.length < 2) { res.innerHTML = '<li class="hint">نام شهر را تایپ کنید</li>'; return; }
+  timer = setTimeout(() => search(v), 300);
+});
+async function search(v) {
+  try {
+    const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?count=8&language=fa&format=json&name=' + encodeURIComponent(v));
+    const j = await r.json();
+    res.innerHTML = '';
+    if (!j.results || !j.results.length) { res.innerHTML = '<li class="hint">نتیجه‌ای پیدا نشد</li>'; return; }
+    j.results.forEach(p => {
+      const li = document.createElement('li'), b = document.createElement('button'), sm = document.createElement('small');
+      b.append(document.createTextNode(p.name));
+      sm.textContent = [p.admin1, p.country].filter(Boolean).join('، ');
+      b.append(sm);
+      b.onclick = () => { dlg.close(); setPlace({ lat: p.latitude, lon: p.longitude, name: p.name }); };
+      li.append(b); res.append(li);
+    });
+  } catch { res.innerHTML = '<li class="hint">خطا در جستجو؛ اتصال را بررسی کنید</li>'; }
+}
+$('#geoBtn').onclick = () => {
+  if (!navigator.geolocation) return alert('مرورگر شما از موقعیت‌یابی پشتیبانی نمی‌کند');
+  $('#geoBtn').textContent = '⏳ در حال یافتن موقعیت…';
+  navigator.geolocation.getCurrentPosition(
+    pos => { $('#geoBtn').textContent = '🎯 استفاده از موقعیت فعلی من'; dlg.close(); setPlace({ lat: pos.coords.latitude, lon: pos.coords.longitude, name: 'موقعیت من' }); },
+    () => { $('#geoBtn').textContent = '🎯 استفاده از موقعیت فعلی من'; alert('دسترسی به موقعیت داده نشد'); },
+    { timeout: 10000, maximumAge: 600000 }
+  );
+};
+
+/* ---------- رفرش ---------- */
+$('#refreshBtn').onclick = load;
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && Date.now() - lastFetch > 15 * 60 * 1000) load();
+});
+setInterval(() => { if (!document.hidden) load(); }, 30 * 60 * 1000);
+
+/* ---------- PWA: آیکن و مانیفست ---------- */
+function makeIcon(size) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, size, size);
+  gr.addColorStop(0, '#3b82f6'); gr.addColorStop(1, '#0ea5e9');
+  g.fillStyle = gr; g.fillRect(0, 0, size, size);
+  g.font = `${size * 0.58}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('⛅', size / 2, size / 2 + size * 0.04);
+  return c.toDataURL('image/png');
+}
+let manUrl;
+function buildManifest() {
+  try {
+    $('#touchIcon').href = makeIcon(180);
+    const m = {
+      name: 'هوای ساعتی', short_name: 'هوای ساعتی', lang: 'fa', dir: 'rtl',
+      start_url: location.href, scope: location.href.split('?')[0].replace(/[^/]*$/, ''),
+      display: 'standalone', background_color: '#0a1020', theme_color: '#3b82f6',
+      icons: [
+        { src: makeIcon(192), sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: makeIcon(512), sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      ]
+    };
+    if (manUrl) URL.revokeObjectURL(manUrl);
+    manUrl = URL.createObjectURL(new Blob([JSON.stringify(m)], { type: 'application/manifest+json' }));
+    $('#manifest').href = manUrl;
+  } catch {}
+}
+buildManifest();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+setPlace_init: {
+  const u = new URL(location.href);
+  if (!u.searchParams.has('lat')) { /* آدرس را برای بوکمارک کامل می‌کنیم */
+    u.searchParams.set('lat', place.lat.toFixed(3)); u.searchParams.set('lon', place.lon.toFixed(3)); u.searchParams.set('name', place.name);
+    history.replaceState(null, '', u); buildManifest();
+  }
+}
+load();
+</script>
+</body>
+</html>
