@@ -1,4 +1,4 @@
-const C = 'wx-v1';
+const C = 'wx-v3';
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(['./', './index.html'])));
   self.skipWaiting();

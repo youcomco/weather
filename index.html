@@ -107,7 +107,24 @@
   .status{margin:16px 6px 0;text-align:center;font-size:12px;color:var(--muted);line-height:1.9}
   .error{margin:14px 0;padding:14px;border-radius:16px;background:rgba(239,68,68,.12);color:#ef4444;font-size:14px;text-align:center}
   .loading{padding:40px 0;text-align:center;color:var(--muted)}
-
+  /* trip planner */
+  .trip .lbl{font-size:12.5px;color:var(--muted);margin:8px 4px 2px}
+  .seg{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}
+  .seg button{padding:8px 12px;border-radius:999px;background:var(--track);font-size:13px}
+  .seg button.on{background:var(--accent);color:#fff;font-weight:700}
+  .verdict{border-radius:18px;padding:14px;margin:10px 0;font-size:14px;line-height:2}
+  .verdict b{display:block;font-size:16px;margin-bottom:2px}
+  .verdict.ok{background:rgba(34,197,94,.15)}
+  .verdict.warn{background:rgba(245,158,11,.17)}
+  .verdict.bad{background:rgba(239,68,68,.15)}
+  .strip{display:flex;gap:3px;overflow-x:auto;padding:6px 2px 22px}
+  .cw{position:relative;flex:0 0 16px}
+  .cell{display:block;width:16px;height:36px;border-radius:6px;opacity:.9;padding:0}
+  .cell.best{outline:3px solid var(--text);outline-offset:1px}
+  .cw span{position:absolute;top:42px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--muted);white-space:nowrap;direction:ltr}
+  .readout{font-size:13px;min-height:22px;margin:2px 4px 6px;color:var(--text)}
+  .tnote{font-size:11.5px;color:var(--muted);line-height:1.9;margin:4px 4px 0}
+  .lg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-left:4px;vertical-align:middle}
   /* dialog */
   dialog{width:min(92vw,440px);border:1px solid var(--border);border-radius:24px;padding:16px;background:var(--bg);color:var(--text);
     margin:10vh auto auto;box-shadow:0 30px 80px rgba(0,0,0,.4)}
@@ -123,6 +140,30 @@
   #results li button:hover,#results li button:active{background:var(--track)}
   #results small{color:var(--muted);display:block;margin-top:2px}
   .hint{color:var(--muted);text-align:center;padding:14px;font-size:13px}
+    /* trip entry + bottom sheet */
+  .trip-entry{width:100%;margin-top:14px;display:flex;align-items:center;gap:12px;padding:12px 16px 12px 12px;border-radius:22px;
+    background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);text-align:right;
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform .15s}
+  .trip-entry:active{transform:scale(.98)}
+  .te-ico{flex:none;width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:23px;
+    background:color-mix(in srgb,var(--accent) 16%,transparent)}
+  .trip-entry[data-s=ok] .te-ico{background:rgba(34,197,94,.2)}
+  .trip-entry[data-s=warn] .te-ico{background:rgba(245,158,11,.22)}
+  .trip-entry[data-s=bad] .te-ico{background:rgba(239,68,68,.2)}
+  .te-txt{flex:1;min-width:0}
+  .te-txt small{display:block;color:var(--muted);font-size:11.5px}
+  .te-txt b{display:block;font-size:14px;margin-top:2px;line-height:1.7}
+  .te-go{color:var(--muted);font-size:26px;line-height:1}
+
+  dialog.sheet{width:min(100vw,640px);max-width:100vw;max-height:88vh;margin:auto auto 0;padding:0;
+    border-radius:28px 28px 0 0;border-bottom:0;overflow:hidden}
+  dialog.sheet[open]{display:flex;flex-direction:column;animation:sheetUp .3s cubic-bezier(.2,.8,.2,1)}
+  @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+  .sheet-head{flex:none;padding:8px 18px 4px}
+  .sheet-head::before{content:"";display:block;width:42px;height:5px;border-radius:5px;background:var(--track);margin:0 auto 10px}
+  .sheet-head div{display:flex;justify-content:space-between;align-items:center}
+  .sheet-head b{font-size:17px}
+  .sheet-body{overflow:auto;padding:4px 16px calc(22px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
 </style>
 </head>
 <body>
@@ -144,6 +185,11 @@
   <input id="q" type="search" placeholder="نام شهر… (مثلاً شیراز)" autocomplete="off">
   <button class="geo" id="geoBtn">🎯 استفاده از موقعیت فعلی من</button>
   <ul id="results"></ul>
+</dialog>
+
+<dialog id="tripDlg" class="sheet">
+  <div class="sheet-head"><div><b>🧭 برنامه‌ریز مسیر</b><button class="x" id="closeTrip" aria-label="بستن">✕</button></div></div>
+  <div class="sheet-body" id="tripBody"><div class="trip" id="trip"></div></div>
 </dialog>
 
 <script>
@@ -226,7 +272,7 @@ async function load() {
   const key = `wx:${place.lat.toFixed(2)},${place.lon.toFixed(2)}`;
   $('#refreshBtn').classList.add('spin');
   const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + place.lat + '&longitude=' + place.lon +
-    '&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,is_day&timezone=auto&forecast_days=2';
+    '&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,is_day&minutely_15=precipitation&timezone=auto&forecast_days=2';
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), 12000);
   try {
@@ -255,6 +301,7 @@ async function load() {
   }
 }
 
+/* ---------- نمایش ---------- */
 /* ---------- نمایش ---------- */
 function render(d) {
   const h = d.hourly;
@@ -297,6 +344,11 @@ function render(d) {
       <div class="chip"><small>مجموع بارش</small><b>${total < 0.1 ? '۰' : mmf(total)} <small style="display:inline">mm</small></b></div>
     </div>
   </section>
+  <button class="trip-entry" id="tripEntry" data-s="none">
+    <span class="te-ico">🧭</span>
+    <span class="te-txt"><small id="teSub">برنامه‌ریز مسیر</small><b id="teMsg">…</b></span>
+    <span class="te-go">...</span>
+  </button>
   <section class="card">
     <h2>نمودار دما و بارش <span class="legend"><span><i style="background:var(--accent)"></i>دما</span><span><i style="background:var(--rain)"></i>احتمال بارش</span></span></h2>
     <div class="chart" id="chart">${chartSVG(rows)}</div>
@@ -321,6 +373,7 @@ function render(d) {
   });
   html += '</div></section>';
   $('#main').innerHTML = html;
+  renderTrip(d);
 }
 
 function chartSVG(rows) {
@@ -398,7 +451,154 @@ $('#geoBtn').onclick = () => {
     { timeout: 10000, maximumAge: 600000 }
   );
 };
+/* ---------- برنامه‌ریز مسیر ---------- */
+const DURS = [10, 15, 20, 30, 45, 60, 90, 120];
+const durLbl = x => x < 60 ? fa(x) + ' دقیقه' : x === 60 ? '۱ ساعت' : x === 90 ? '۱٫۵ ساعت' : '۲ ساعت';
+const QMS = 15 * 60000;
+const CL = [
+  { l: 'بدون بارش', c: '#22c55e' }, { l: 'بارش ضعیف', c: '#facc15' },
+  { l: 'بارش متوسط', c: '#fb923c' }, { l: 'بارش شدید', c: '#ef4444' }
+];
+const clsOf = mm => mm < 0.1 ? 0 : mm < 0.6 ? 1 : mm < 1.9 ? 2 : 3;   // mm در هر ۱۵ دقیقه
+let TS; try { TS = JSON.parse(localStorage.trip); } catch {}
+TS = TS || { dur: 30, relax: false };
+let tripD = null;
 
+const T = ms => `<span class="t">${fa(new Date(ms).toISOString().slice(11, 16))}</span>`;
+const relT = min => min <= 0 ? 'همین الان' : min < 60 ? `${fa(min)} دقیقه دیگر`
+  : `${fa(Math.floor(min / 60))} ساعت${min % 60 ? ' و ' + fa(min % 60) + ' دقیقه' : ''} دیگر`;
+
+function renderTrip(d) {
+  if (d) tripD = d;
+  const box = $('#trip'), sb = $('#tripBody');
+  if (!box || !tripD) return;
+  const keep = sb.scrollTop;
+  const setEntry = (s, t) => {
+    const e = $('#tripEntry'); if (!e) return;
+    e.dataset.s = s; $('#teMsg').innerHTML = t;
+    $('#teSub').textContent = 'برنامه‌ریز مسیر · ' + durLbl(TS.dur) + (TS.relax ? ' · نم‌نم اشکالی ندارد' : ' · اصلاً خیس نشوم');
+  };
+  const m = tripD.minutely_15, h = tripD.hourly;
+  if (!m || !m.precipitation) {
+    setEntry('none', 'برای فعال‌شدن، یک‌بار صفحه را به‌روز کنید');
+    box.innerHTML = '<div class="hint">این بخش به داده ۱۵ دقیقه‌ای نیاز دارد. یک بار با اینترنت صفحه را به‌روز کنید.</div>';
+    return;
+  }
+  const off = (tripD.utc_offset_seconds || 0) * 1000, now = Date.now() + off;
+  const nowDay = new Date(now).toISOString().slice(0, 10);
+  const tag = ms => (new Date(ms).toISOString().slice(0, 10) !== nowDay ? 'فردا ' : '') + T(ms);
+  const slots = m.time.map((t, i) => ({ e: Date.parse(t + 'Z'), mm: m.precipitation[i] })).filter(s => s.mm != null);
+  const hrs = h.time.map((t, i) => ({ s: Date.parse(t + 'Z'), p: h.precipitation_probability[i] ?? 0 }));
+  const D = TS.dur * 60000, okMax = TS.relax ? 1 : 0;
+  const lastE = slots.length ? slots[slots.length - 1].e : 0;
+
+  // بررسی یک بازه سفر که از لحظه s شروع می‌شود
+  function ev(s) {
+    const e = s + D; let mx = 0, tot = 0, f = null, l = null;
+    for (const q of slots) {
+      const a = Math.max(s, q.e - QMS), b = Math.min(e, q.e), o = b - a;
+      if (o > 0) {
+        tot += q.mm * o / QMS; if (q.mm > mx) mx = q.mm;
+        if (q.mm >= 0.1) { if (f == null) f = a; l = b; }
+      }
+    }
+    let pr = 0;
+    for (const x of hrs) if (x.s < e && x.s + 3600000 > s && x.p > pr) pr = x.p;
+    return { s, e, mx, tot, f, l, pr, c: clsOf(mx) };
+  }
+  const ok = r => r.c <= okMax;
+  const R = [];
+  for (let s = now; s + D <= lastE && s <= now + 24 * 3600000; s += QMS) R.push(ev(s));
+
+  const ctl = `
+    <div class="lbl">مدت مسیر تا مقصد:</div>
+    <div class="seg">${DURS.map(x => `<button data-d="${x}" class="${x === TS.dur ? 'on' : ''}">${durLbl(x)}</button>`).join('')}</div>
+    <div class="seg">
+      <button data-r="0" class="${!TS.relax ? 'on' : ''}">☂️ اصلاً خیس نشوم</button>
+      <button data-r="1" class="${TS.relax ? 'on' : ''}">🌦️ نم‌نم اشکالی ندارد</button>
+    </div>`;
+  const wetTxt = r => r.f == null ? '' : `از حدود ${T(r.f)} تا ${T(r.l)}`;
+
+  if (!R.length) {
+    setEntry('none', 'داده کافی برای این مدت مسیر وجود ندارد');
+    box.innerHTML = ctl + '<div class="hint">داده کافی برای این مدت وجود ندارد.</div>';
+  } else {
+    const r0 = R[0];
+    let cls, vh, short, bi = 0;
+    if (ok(r0)) {
+      const j = R.findIndex(r => !ok(r));
+      const warn = r0.pr >= 50;
+      cls = warn ? 'warn' : 'ok';
+      vh = `<b>${warn ? '🟡 بارشی پیش‌بینی نشده، ولی احتمالش هست' : '🟢 اگر همین الان راه بیفتی خیس نمی‌شوی'}</b>`;
+      if (j < 0) {
+        vh += `مسیر ${durLbl(TS.dur)} تا ۲۴ ساعت آینده بدون بارش است.`;
+        short = warn ? '🟡 بارش پیش‌بینی نشده، ولی احتمالش هست' : '🟢 همین الان بروی خیس نمی‌شوی';
+      } else {
+        const lastOk = R[j - 1], mins = Math.round((lastOk.s - now) / 60000);
+        if (mins < 5) {
+          vh += `باید همین حالا راه بیفتی؛ بارش حدود ${tag(R[j].f ?? R[j].s)} وارد مسیر می‌شود.`;
+          short = '🟠 همین حالا راه بیفت؛ بارش در راه است';
+        } else {
+          vh += `حداکثر تا ساعت ${tag(lastOk.s)} (${relT(mins)}) راه بیفت. بعد از آن بارش وارد مسیر می‌شود.`;
+          short = `${warn ? '🟡' : '🟢'} تا ساعت ${tag(lastOk.s)} وقت داری`;
+        }
+      }
+      if (warn) vh += `<br>احتمال بارش در این بازه تا ٪${fa(r0.pr)} است.`;
+    } else {
+      const k = R.findIndex(ok);
+      const ic = r0.c >= 2 ? '🔴' : '🟠';
+      cls = r0.c >= 2 ? 'bad' : 'warn';
+      vh = `<b>${ic} اگر همین الان راه بیفتی، ${CL[r0.c].l} می‌گیری</b>
+        بارش ${wetTxt(r0)} (حداکثر حدود ${mmf(r0.mx * 4)} mm/h).`;
+      if (k > 0) {
+        bi = k;
+        const n = R.findIndex((r, i) => i > k && !ok(r));
+        const lastOkS = n < 0 ? R[R.length - 1].s : R[n - 1].s;
+        vh += `<br>✅ نزدیک‌ترین زمان مناسب: <strong>ساعت ${tag(R[k].s)}</strong> (${relT(Math.round((R[k].s - now) / 60000))}).`;
+        vh += n < 0 ? ' تا ۲۴ ساعت آینده هم مناسب می‌ماند.' : ` تا ساعت ${tag(lastOkS)} هم مسیر مناسب است.`;
+        short = `${ic} الان بارش داری · زمان مناسب: ساعت ${tag(R[k].s)}`;
+      } else {
+        bi = R.reduce((b, r, i) => r.tot < R[b].tot ? i : b, 0);
+        vh += `<br>در ۲۴ ساعت آینده بازه کاملاً مناسبی پیدا نشد. کم‌بارش‌ترین زمان: ساعت ${tag(R[bi].s)} (حدود ${mmf(R[bi].tot)} mm در کل مسیر).`;
+        if (!TS.relax) vh += '<br>با گزینه «نم‌نم اشکالی ندارد» ممکن است زمان مناسب پیدا شود.';
+        short = `${ic} بازه کاملاً مناسبی پیدا نشد`;
+      }
+    }
+    setEntry(cls, short);
+    const strip = R.map((r, i) => `<div class="cw"><button class="cell${i === bi ? ' best' : ''}" data-i="${i}" style="background:${CL[r.c].c}" aria-label="حرکت ${CL[r.c].l}"></button>
+      <span>${i === 0 ? 'اکنون' : i % 4 === 0 ? fa(new Date(r.s).toISOString().slice(11, 16)) : ''}</span></div>`).join('');
+
+    box.innerHTML = `<div class="verdict ${cls}">${vh}</div>` + ctl +
+      `<div class="lbl">وضعیت مسیر بر حسب زمان حرکت (خانه‌ها = هر ۱۵ دقیقه):</div>
+      <div class="strip">${strip}</div>
+      <div class="readout" id="ro">روی یک خانه بزن تا وضعیت آن ساعت حرکت را ببینی. خانه دارای خط دور، پیشنهاد اپ است.</div>
+      <div class="legend lg" style="margin:0 4px 8px">${CL.map(c => `<span><i style="background:${c.c}"></i>${c.l}</span>`).join('')}</div>`;
+    box.querySelector('.strip').scrollLeft = 0;
+  }
+  box.insertAdjacentHTML('beforeend', `<p class="tnote">پیش‌بینی برای یک نقطه (شهر انتخابی) است و مسیر را در نظر نمی‌گیرد. در ایران داده ۱۵ دقیقه‌ای از روی داده ساعتی تخمین زده می‌شود و دقت زمانی آن حدود ±۱ ساعت است؛ برای تصمیم‌های مرزی حاشیه ایمنی بگذار.</p>`);
+  sb.scrollTop = keep;
+
+  box.onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.i !== undefined) {
+      const r = R[+b.dataset.i];
+      $('#ro').innerHTML = `حرکت ساعت ${tag(r.s)} ← <strong>${CL[r.c].l}</strong>` +
+        (r.f ? ` (${wetTxt(r)})` : '') + ` · مجموع حدود ${r.tot < 0.05 ? '۰' : mmf(r.tot)} mm · احتمال ٪${fa(r.pr)}`;
+      return;
+    }
+    if (b.dataset.d) TS.dur = +b.dataset.d;
+    else if (b.dataset.r) TS.relax = b.dataset.r === '1';
+    else return;
+    localStorage.trip = JSON.stringify(TS);
+    renderTrip();
+  };
+}
+
+/* باز و بسته کردن پنل */
+const tripDlg = $('#tripDlg');
+document.addEventListener('click', e => { if (e.target.closest('#tripEntry')) tripDlg.showModal(); });
+$('#closeTrip').onclick = () => tripDlg.close();
+tripDlg.addEventListener('click', e => { if (e.target === tripDlg) tripDlg.close(); });
 /* ---------- رفرش ---------- */
 $('#refreshBtn').onclick = load;
 document.addEventListener('visibilitychange', () => {
